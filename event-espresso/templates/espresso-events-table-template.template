@@ -1,0 +1,107 @@
+<?php
+
+// Options
+$date_format		= get_option( 'date_format' );
+$time_format		= get_option( 'time_format' );
+
+
+// Load Venue View Helper
+EE_Registry::instance()->load_helper('Venue_View');
+//Defaults
+	@@ -14,53 +17,23 @@ if ( have_posts() ) :
+	// allow other stuff
+	do_action( 'AHEE__espresso_events_table_template_template__before_loop' );
+	?>
+	<div style="height: 500px; overflow: scroll; border: 1px solid #eee; border-bottom: 10px solid #00438B; padding: 0; margin: 0;">
+	<table id="ee_filter_table" class="espresso-table footable table" style="margin-bottom: 0;" data-page-size="<?php echo $table_pages; ?>" data-filter="#filter">
+	<thead class="espresso-table-header-row">
+		<tr>
+			<th class="th-group"><?php _e('Event','event_espresso'); ?></th>
+			<?php if( $show_venues ) { ?>
+				<th class="th-group"><?php _e('Location','event_espresso'); ?></th>
+			<?php } ?>
+			<th class="th-group" data-sort-ignore="true"><?php _e('Dates','event_espresso'); ?></th>
+			<th class="th-group" data-sort-ignore="true"><?php _e('Price','event_espresso'); ?></th>
+			<th class="th-group" data-sort-ignore="true"><?php _e('Status','event_espresso'); ?></th>
+		</tr>
+	</thead>
+	<tbody>
+
+	<?php
+
+	// Start the Loop.
+	while ( have_posts() ) : the_post();
+		// Include the post TYPE-specific template for the content.
+	@@ -104,36 +77,73 @@ if ( have_posts() ) :
+		// Pull the datetimes for this event order by start_date/time
+		$datetimes = EEM_Datetime::instance()->get_datetimes_for_event_ordered_by_start_time( $post->ID, $show_expired, false, $datetime_limit );
+
+
+		// Reset the datetimes pointer to the earliest datetime and use that one.
+		$datetime = reset( $datetimes );
+
+		// GET PRICES
+		if ( ! $event->is_sold_out() ) {
+
+			// grab array of EE_Ticket objects for event
+			$tickets = EEH_Event_View::event_tickets_available( $post->ID );
+
+			// grab first ticket from array
+			$ticket = reset( $tickets );
+			//check if the ticket is free, if set the ticket price to 'Free'
+			if ( $ticket instanceof EE_Ticket ) {
+				$ticket_price = $ticket->pretty_price();
+				$ticket_price_data_value = $ticket->price();
+				$ticket_price = $ticket_price_data_value == 0 ? __( 'Free', 'event_espresso' ) : $ticket_price;
+			}			
+
+			//Get the remaining ticket values for the next datetime.
+			$tickets_remaining = $datetime->tickets_remaining() === EE_INF ? __('Unlimited','event_espresso') : $datetime->tickets_remaining();
+		} else {
+
+			//The event is sold out, set the ticket price to 'N/A'
+			$ticket_price = __( 'N/A', 'event_espresso');
+		}
+
+		// GET CITY
+
+		$venue_city = '';
+		// get first related venue and convert to CSV string
+		$venue = $event->venues(array('limit' => 1));
+		if (is_array($venue) && ! empty($venue)) {
+    		$venue = array_shift($venue);
+    		if ($venue instanceof EE_Venue) {
+        		$venue_city = $venue->city();
+    		}
+		}
+
+        if ($datetime instanceof EE_Datetime && (strtotime( $datetime->start_date_and_time('Y-m-d')) >= strtotime('+1 day',  strtotime(date('l jS F Y'))))) {
+        ?>
+		<tr class="espresso-table-row <?php echo $category_slugs; ?>">
+			<td class="event_title event-<?php echo $post->ID; ?>"><?php echo $post->post_title; ?></td>
+			<td class="venue_title event-<?php echo $post->ID; ?>"><?php echo $venue_city; ?></td>
+			<td class="start_date event-<?php echo $post->ID; ?>" data-value="<?php echo $datetime->get_raw( 'DTT_EVT_start' ); ?>">
+				<ul class="ee-table-view-datetime-list">
+					<?php
+						// Loop over each datetime we have pulled from the database and output
+						foreach ($datetimes as $datetime) {
+						?>
+							<li class="datetime-id-<?php echo $datetime->ID(); ?>">
+								<?php echo date_i18n(  $date_format, strtotime( $datetime->start_date_and_time('Y-m-d') ) ) . " - " . date_i18n(  $date_format, strtotime( $datetime->end_date_and_time('Y-m-d') ) ); ?>
+							</li>
+					<?php
+						//end foreach $datetimes
+						}
+					?>
+				</ul>
+			</td>
+			<td class="price event-<?php echo $post->ID; ?>" nowrao="nowrap"><?php echo $ticket_price; ?></td>
+			<td class="td-group reg-col" nowrap="nowrap"><?php echo $live_button; ?></td>
+		</tr>
+		<?php
+        }
+    endwhile;
+	echo '</table>';
+	echo '</div>';
+	// allow moar other stuff
+	do_action( 'AHEE__espresso_events_table_template_template__after_loop' );
