@@ -7,7 +7,7 @@ exit();
 
 # clear a variable to hold the POSTed data
 $datafields = "";
-while (list($name, $value) = each($_POST)) {
+foreach($_POST as $name=>$value) {
 if ( $name == "name" ) {
 $name="wpnm";
 }

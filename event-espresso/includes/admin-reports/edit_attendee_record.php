@@ -407,7 +407,7 @@ function edit_attendee_record() {
 		// **************************************************************************
 
 		$counter = 0;
-		$additional_attendees = NULL;
+		$additional_attendees = [];
 		
 		$SQL = "SELECT att.*, evt.event_name, evt.question_groups, evt.event_meta, evt.additional_limit FROM " . EVENTS_ATTENDEE_TABLE . " att ";
 		$SQL .= "JOIN " . EVENTS_DETAIL_TABLE . " evt ON att.event_id = evt.id ";
@@ -504,7 +504,7 @@ function edit_attendee_record() {
 
 		// display success messages
 		if ( ! empty( $notifications['success'] )) { 
-			$success_msg = implode( $notifications['success'], '<br />' );
+			$success_msg = implode('<br />', $notifications['success']);
 		?>
 				
 			<div id="message" class="updated fade">

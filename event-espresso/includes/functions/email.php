@@ -167,6 +167,7 @@ function espresso_prepare_email_data($attendee_id, $multi_reg, $custom_data='') 
 	$data = new stdClass;
 	$data->multi_reg = $multi_reg;
     $data->seatingchart_tag = '';
+    $data->event_table = '';
 	//print_r($custom_data);
 	//Create vars for the custom data
 	if (!empty($custom_data)) { 
